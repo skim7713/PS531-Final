@@ -1,0 +1,825 @@
+---
+title: "Code Apeendix"
+author: 
+- affiliation: University of Illinois at Urbana-Champaign
+  name: Sanghoon Kim
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+geometry: margin=1in
+fontfamily: Crimson Text
+fontsize: 11pt
+bibliography: C:/Users/saoon/Documents/Quant 2 2017/531-explorations/finalpaper.bib
+biblio-style: apsr
+output:
+  pdf_document: 
+    fig_caption: yes
+    fig_height: 7
+    fig_width: 7
+    keep_tex: yes
+    template: C:/Users/saoon/Documents/Quant 2 2017/531-explorations/bowersarticletemplate.latex
+---
+
+```{r include=FALSE, cache=FALSE}
+# Some customization.  You can alter or delete as desired (if you know what you are doing).
+# knitr settings to control how R chunks work.
+
+## To make the html file do
+## render("exploration4.Rmd",output_format=html_document(fig_retina=FALSE))
+## To make the pdf file do
+## render("exploration4.Rmd",output_format=pdf_document())
+
+require(knitr)
+opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small",    # slightly smaller font for code
+  echo=FALSE,
+  results='markup',
+  strip.white=TRUE,
+  fig.path='figs/fig',
+  cache=FALSE,
+  highlight=TRUE,
+  width.cutoff=132,
+  size='footnotesize',
+  out.width='.9\\textwidth',
+  fig.retina=FALSE,
+  message=FALSE,
+  warning=FALSE,
+  comment=NA)
+```
+
+
+
+
+# Original code from Lupu 2013
+```{r }
+library(foreign)
+lupudat<-read.dta("C:/Users/saoon/Dropbox/UIUC/2017S/Quant II/Replication/AJPS_brands_data.dta")
+
+library(mediation)
+library(RItools)
+
+
+s <- 1000
+
+
+# Hansen and Bowers omnibus balance test
+balance <- xBalance(formulario ~ age + female + educgrp + income, data=lupudat, report="all")
+balance
+
+# Delete observations with missing values
+med.pid.polar2 <- as.data.frame(na.omit(subset(lupudat, formulario==1 | formulario==2, select=c(pid, polar, frm2, info, educgrp, female, age, cordoba))))
+med.pid.polar3 <- as.data.frame(na.omit(subset(lupudat, formulario==1 | formulario==3, select=c(pid, polar, frm3, info, educgrp, female, age, cordoba))))
+med.pid.polar4 <- as.data.frame(na.omit(subset(lupudat, formulario==1 | formulario==4, select=c(pid, polar, frm4, info, educgrp, female, age, cordoba))))
+med.pid.mandate2 <- as.data.frame(na.omit(subset(lupudat, formulario==1 | formulario==2, select=c(pid, mandate, frm2, info, educgrp, female, age, cordoba))))
+med.pid.mandate3 <- as.data.frame(na.omit(subset(lupudat, formulario==1 | formulario==3, select=c(pid, mandate, frm3, info, educgrp, female, age, cordoba))))
+med.pid.mandate4 <- as.data.frame(na.omit(subset(lupudat, formulario==1 | formulario==4, select=c(pid, mandate, frm4, info, educgrp, female, age, cordoba))))
+
+
+# Average causal mediation effects (Table A7)
+model.m <- lm(polar ~ frm2 + info + educgrp + female + age + cordoba, data=med.pid.polar2)
+model.y <- glm(pid ~ frm2 + polar + info + educgrp + female + age + cordoba, data=med.pid.polar2, family=binomial(link="probit"))
+out1 <- mediate(model.m, model.y, sims=s, boot=TRUE, treat="frm2", mediator="polar")
+summary(out1)
+
+model.m <- lm(polar ~ frm3 + info + educgrp + female + age + cordoba, data=med.pid.polar3)
+model.y <- glm(pid ~ frm3 + polar + info + educgrp + female + age + cordoba, data=med.pid.polar3, family=binomial(link="probit"))
+out2 <- mediate(model.m, model.y, sims=s, boot = TRUE, treat="frm3", mediator="polar")
+summary(out2)
+
+model.m <- lm(polar ~ frm4 + info + educgrp + female + age + cordoba, data=med.pid.polar4)
+model.y <- glm(pid ~ frm4 + polar + info + educgrp + female + age + cordoba, data=med.pid.polar4, family=binomial(link="probit"))
+out3 <- mediate(model.m, model.y, sims=s, boot = TRUE, treat="frm4", mediator="polar")
+summary(out3)
+
+model.m <- lm(mandate ~ frm2 + info + educgrp + female + age + cordoba, data=med.pid.mandate2)
+model.y <- glm(pid ~ frm2 + mandate + info + educgrp + female + age + cordoba, data=med.pid.mandate2, family=binomial(link="probit"))
+out4 <- mediate(model.m, model.y, sims=s, boot = TRUE, treat="frm2", mediator="mandate")
+summary(out4)
+
+model.m <- lm(mandate ~ frm3 + info + educgrp + female + age + cordoba, data=med.pid.mandate3)
+model.y <- glm(pid ~ frm3 + mandate + info + educgrp + female + age + cordoba, data=med.pid.mandate3, family=binomial(link="probit"))
+out5 <- mediate(model.m, model.y, sims=s, boot = TRUE, treat="frm3", mediator="mandate")
+summary(out5)
+
+model.m <- lm(mandate ~ frm4 + info + educgrp + female + age + cordoba, data=med.pid.mandate4)
+model.y <- glm(pid ~ frm4 + mandate + info + educgrp + female + age + cordoba, data=med.pid.mandate4, family=binomial(link="probit"))
+out6 <- mediate(model.m, model.y, sims=s, boot = TRUE, treat="frm4", mediator="mandate")
+summary(out6)
+
+
+save.image("replication.rda")
+
+```
+
+# Replication of Appendix results 
+```{r}
+fit<-lm(pid~frm2, data=med.pid.polar2)
+summary(fit)
+
+X1 <- model.matrix(~formulario+frm2+pid,data=lupudat)
+
+# ATE in Table A3
+control <- mean(lupudat$pid[lupudat$formulario==1]==1,na.rm=TRUE)
+treat1 <-mean(lupudat$pid[lupudat$formulario==2]==1,na.rm=TRUE)
+
+t1dat <- subset(lupudat, lupudat$formulario==1 | formulario==2)
+summary(lm(pid~frm2,data=t1))
+ATEt1
+
+ATEt1<-mean(lupudat$pid[lupudat$formulario==2]==1,na.rm=TRUE) - mean(lupudat$pid[lupudat$formulario==1]==1,na.rm=TRUE)
+ATEt2<-mean(lupudat$pid[lupudat$formulario==3]==1,na.rm=TRUE) - mean(lupudat$pid[lupudat$formulario==1]==1,na.rm=TRUE)
+ATEt3<-mean(lupudat$pid[lupudat$formulario==4]==1,na.rm=TRUE) - mean(lupudat$pid[lupudat$formulario==1]==1,na.rm=TRUE)
+
+cbind(ATEt1,ATEt2,ATEt3)
+
+
+#t-test for treatment
+ttest1<-t.test(lupudat$pid[lupudat$formulario==2]==1,lupudat$pid[lupudat$formulario==1]==1)
+ttest2<-t.test(lupudat$pid[lupudat$formulario==3]==1,lupudat$pid[lupudat$formulario==1]==1)
+ttest3<-t.test(lupudat$pid[lupudat$formulario==4]==1,lupudat$pid[lupudat$formulario==1]==1)
+
+# Wilcoxon rank-order test
+library(MASS)
+wilcox1<-wilcox.test(lupudat$pid[lupudat$formulario==2], lupudat$pid[lupudat$formulario==1])
+wilcox2<-wilcox.test(lupudat$pid[lupudat$formulario==3], lupudat$pid[lupudat$formulario==1])
+wilcox3<-wilcox.test(lupudat$pid[lupudat$formulario==4], lupudat$pid[lupudat$formulario==1])
+
+wilcox3
+
+tableA4 <- glm(pid ~ frm2+frm3+frm4, data=lupudat, family=binomial(link="probit"))
+tableA5 <- glm(pid ~ frm2+frm3+frm4+ info + educgrp + female + age + cordoba, data=lupudat, family=binomial(link="probit"))
+summary(tableA5)
+
+```
+
+
+
+# Analysis of the operating characteristics of the procedures
+
+## Bias test
+
+```{r}
+set.seed(20150313)
+# Cordoba as a block 
+t1dat$region <- t1dat$cordoba
+t1dat$region[t1dat$region==1]<-"cordoba"
+t1dat$region[t1dat$region==0]<-"rest"
+
+
+## for the first treatment 
+t1dat$t1_fakey0<-unsplit(lapply(split(t1dat,t1dat$cordoba),function(dat){
+                   pctpretrpid<-with(dat,mean(pid[formulario==1],na.rm=TRUE))
+                   nprepid <- sum(dat$formulario==1,na.rm=TRUE)
+                   n<-nrow(dat)
+                   npretrpid <- round(n*pctpretrpid)
+                   sample(rep(c(0,1),c(n-npretrpid,npretrpid)))
+}),t1dat$cordoba)
+
+library(dplyr)
+cordobainfo <- t1dat %>% group_by(cordoba) %>% summarise(N=n(),
+                                                       trueATE= mean(pid[formulario==2],na.rm=TRUE)-mean(pid[formulario==1],na.rm=TRUE),
+                                                       nfakey0is1=sum(t1_fakey0,na.rm=TRUE), 
+                                                       nfakey1is1 = round(N * ( nfakey0is1/N +  trueATE)),
+                                                       nfakey1is0 = N - nfakey1is1)
+
+cordobainfo # treatment is more responsive among Cordoba residents.
+
+fakey1list <- cordobainfo %>% rowwise() %>% do(samp=sample(rep(c(0,1),c(.$nfakey1is0,.$nfakey1is1)))) %>% as.list(.)
+
+t1dat$t1_fakey1 <- unsplit(fakey1list$samp,t1dat$cordoba)
+
+t1dat<-t1dat %>% group_by(cordoba) %>% mutate(trueATE=mean(t1_fakey0[formulario==2],na.rm=TRUE)-mean(t1_fakey1[formulario==1],na.rm=TRUE),wt=n()/nrow(t1dat))
+
+effectsByBlock <- t1dat %>% group_by(cordoba) %>% summarise(effect=mean(t1_fakey1)-mean(t1_fakey0),n=n(),
+                                                        nT = sum(formulario==2), nC = sum(formulario==1),
+                                                         logodds = log( mean(t1_fakey1)/(1-mean(t1_fakey1))) -
+                                                           log( mean(t1_fakey0)/(1-mean(t1_fakey0)))
+                                                         )
+effectsByBlock
+effectsByBlock$h <- with(effectsByBlock, 1/( ( (1/nT) + (1/nC) ) / 2 ))
+
+trueHarmonicWeightedATE  <- with(effectsByBlock, sum(effect*h/sum(h)))
+trueBlockSizeWeightedATE <- with(effectsByBlock, sum(effect*n/sum(n)))
+trueTotal<-with(t1dat,sum(t1_fakey1))
+trueDiffLogOdds <- with(effectsByBlock, sum(logodds * n/sum(n)))
+
+c(trueHarmonicWeightedATE, trueBlockSizeWeightedATE, trueTotal,trueDiffLogOdds)
+
+### what is this
+# Turn block factor into dummies
+X <- model.matrix(~0+region,t1dat)
+colnames(X)<-make.names(colnames(X))
+stopifnot(all.equal(row.names(X),row.names(t1dat)))
+t1dat[,colnames(X)] <- X
+t1dat[,paste(colnames(X),"md",sep="")]<-apply(X,2,function(x){ x - mean(x) })
+
+newfmla <- paste("pid~frm2*(",paste(colnames(X)[-1],"md",sep="",collapse="+"),")",collapse="")
+olsmod2 <- lm(formula(newfmla),data=t1dat)
+coef(olsmod2)[["frm2"]]
+
+## makeNewObsyAndEst
+makeNewObsyAndEst<-function(thez,theblock){
+    newobsy<-with(t1dat, thez*t1_fakey1+(1-thez)*t1_fakey0 )
+    lmHarmATE<-coef(lm(newobsy~thez+theblock))[["thez"]]
+    newfmla <- paste("newobsy~thez*(",paste(colnames(X)[-1],"md",sep="",collapse="+"),")",collapse="")
+    lmBlockSizeATE <- coef(lm(formula(newfmla),data=t1dat))[["thez"]]
+    totalEffect<-mean(newobsy[thez==1])*length(newobsy)
+    ## gammaglm<-glm(newobsy~thez+theblock,family=Gamma) ## Change this old stuff to logit for the Boss
+    ## Or maybe use a robust diff of means, maybe better for MSE even if biased.
+    ## haty0<-predict(gammaglm,newdata=data.frame(thez=0),type="response")
+    ## haty1<-predict(gammaglm,newdata=data.frame(thez=1),type="response")
+    ## gammaglmATE<-haty1-haty0
+    ## gammacoef<-coef(gammaglm)[["thez"]]
+    ## return(c(lmATE=lmATE,gammacoef=gammacoef,gammaglmATE=gammaglmATE))
+    return(c(lmHarmATE=lmHarmATE,lmBlockSizeATE=lmBlockSizeATE,totalTE=totalEffect))
+}
+
+makeNewZ <- function(thez, theblock){
+  unsplit(lapply(split(thez,theblock),sample),theblock)
+}
+
+makeNewObsyAndEst(thez=makeNewZ(thez=t1dat$frm2,theblock=t1dat$region),theblock=t1dat$region) 
+
+
+permuteFn<-function(y){
+  shuffledt1<-sample(t1dat$frm2)
+  meandiff<-coef(lm(y~shuffledt1))[["shuffledt1"]]
+  return(meandiff)
+}
+
+set.seed(20150101)
+results<-replicate(10000,permuteFn(y=t1dat$pid))
+mean(results)
+ 
+## Graph
+par(mar=c(1,1,1,1))
+par(mfrow=c(2,1),oma=rep(0,4),mgp=c(1.5,.5,0),pty="s")
+
+plot(density(results/sd(results)),xlab="Mean Diffs")
+curve(dnorm(x,sd=1,mean=0),from=-4,to=4,col="blue",add=TRUE) ## CLT ok.
+rug(ATEt1,lwd=3,ticksize=.5)
+
+qqnorm(results/sd(results))
+qqline(results/sd(results))
+
+pnorm(ATEt1,sd=1,mean=0,lower.tail=FALSE) # p-value
+2*(min( c( pnorm(ATEt1,sd=1,mean=0),1-pnorm(ATEt1,sd=1,mean=0) )))
+
+
+
+```
+
+## Consistency
+```{r}
+## Set the sample size to be tested
+sampn<- seq(from=100, to=2000, by=400)
+alpha <- 0.05 # Significance level
+
+## Set number of simulations to run for each sample size
+sims <- 1000
+
+## Outer loop to vary the number of subjects
+for(j in 1:length(sampn)){
+  N <- sampn[j]
+  significant.experiments <- rep(NA, sims)
+  #### Inner loop to conduct experiments "sims" times over for each N ####
+  for (i in 1:sims){
+    ## Randomly generated outcomes for control
+    Y0 <- rnorm(nrow(t1dat1), 0,1)
+    # Treatment effect as exists in the world of known effects (world of 0 effect)
+    tau <- ATEt1
+    Y1 <- Y0 + tau
+    newz <- sample(t1dat1$frm2)
+    y.sim <- Y1*newz + Y0*(1-newz)
+    fit.sim <- lm(y.sim~newz)
+    coefs[i] <- coef(fit.sim)[[2]]
+  }
+  ## Check how many of the runs are significant according to alpha
+  blah[j] <- mean(coefs[i])
+}
+
+blah
+
+```
+
+# Type I error
+```{r type I error}
+require(foreach)
+
+# CLT based
+simulation1 <- function(simulations) {
+  output<-times(simulations) %dopar% {
+    sim_p <- summary(lm(pid~sample(frm2,replace=F),data=t1dat))$coef[2,4]
+    return(sim_p)
+  }
+  return(output)
+ }
+results1 <- simulation1(1000)
+mean(results1<0.05)
+
+
+# Type I error
+lmrepfn<-function(H=0){
+	sim_t<-summary(lm(I(pid-frm2*H)~sample(frm2, replace=F),data=t1dat))$coef[2,3]
+	convert_p<-2*min(pt(sim_t,591),pt(-sim_t,591))
+	return(convert_p)
+}
+
+simulation3a<- function(simulations) {
+	output<-replicate(simulations, lmrepfn())
+	return(output)
+}
+
+results3a<-simulation3a(1000) 
+plot(density(results3a))
+mean(results3a<.05)
+
+# Power test
+# Truth is 0.0877 but we ask if it is 0. 
+# subtracting ATE from Y, shuffling X
+repfn13<-function(H=0){
+	newoutcome
+  sim_z<-summary(lm((pid-frm2*H)~sample(frm2,replace=FALSE),data=t1dat))$coef[2,3]
+	convert_p<-2*min(pt(sim_z,591),pt(-sim_z,591))
+	return(convert_p)
+}
+
+simulation9<- function(simulations) {
+	output<-replicate(simulations, repfn13())
+	return(output)
+}
+
+results9<-simulation9(1000)
+mean(results9>.05) #0.96
+
+# rlm
+require(MASS)
+repfn<-function(H=0.0877){
+	sim_t<-summary(rlm(I(pid-frm2*H)~sample(frm2,replace=FALSE),data=t1dat,maxit=100))$coef[2,3]
+	convert_p<-2*min(pt(sim_t,591),pt(-sim_t,591))
+	return(convert_p)
+}
+
+simulation3r<- function(simulations) {
+	output<-replicate(simulations, repfn())
+	return(output)
+}
+
+results3r<-simulation3r(1000) ## choosing few simulations this time
+mean(results3r>0.05) ## Power
+
+
+## Logistic analysis: glm1
+set.seed(20140303)
+obslgT<-coef(glm(pid~frm2,data=t1dat,family="binomial"))[[2]]
+summary(glm(pid~frm2,data=t1dat,family="binomial"))$coefficients[2,3]
+
+simulation6<- function(numsim,numsim2) {
+  output<-times(numsim) %dopar% {
+      lgT<-function(){
+          coef(glm(pid~sample(frm2, replace=FALSE),data=t1dat,family="binomial"))[[2]]
+      }
+      lgTdist<-replicate(numsim2,lgT())
+      lgp<-2*min(mean(lgTdist>=obslgT),mean(lgTdist<=obslgT))
+    return(lgp)
+  }
+  return(output)
+ }
+
+results6=simulation6(numsim=100,numsim2=100)
+mean(results6>.05)
+
+```
+
+
+## Confidence Intervals 
+
+```{r}
+## Confidence interval: choose alpha=.05
+# From Exploration 5
+possibleH0<-seq(0.0,0.20,.01)
+
+mytestCLTIID<-function(h,y,z){
+  newy<-y-(z*h)
+  summary(lm(newy~z))$coef["z","Pr(>|t|)"]
+}
+
+pForPossibleH0<-sapply(possibleH0,function(h,y=t1dat$pid,z=t1dat$frm2){
+					 mytestCLTIID(h=h,y=y,z=z)
+})
+names(pForPossibleH0)<-possibleH0
+print(pForPossibleH0, digits=3)
+# CI: [0.01, 0.17]
+
+
+mytest2ForUniRoot<-function(x,y=t1dat$pid,z=t1dat$frm2){
+			 newy<-y-(z*x)
+			 .05-summary(lm(newy~z))$coef["z","Pr(>|t|)"]
+}
+
+## mytest2ForUniRoot(20)
+## mytest2ForUniRoot(-20)
+upperlim<-uniroot(mytest2ForUniRoot,interval=c(0.05,.20),extendInt="no")
+lowerlim<-uniroot(mytest2ForUniRoot,interval=c(-0.20,0.05),extendInt="no")
+c(lowerlim$root,upperlim$root)
+
+
+##### Fisher's Approach
+newExperiment<-function(z){
+  newz<-sample(z) ## make truth H0: \tau=0
+  return(newz)
+}
+
+myTestStat<-function(x,newz,y=t1dat$pid){
+  # x is a hypothesized constant treatment effect
+  newy <- y - ( newz*x ) ## what we would observe under the hypothesis (constant effects)
+  coef(lm(newy~newz))[["newz"]]
+}
+
+obsTestStat<-myTestStat(x=0,newz=t1dat$frm2)
+
+myFisherTest2<-function(x,thez){
+  ## return a p-value
+  randDistH0<-replicate(1000,myTestStat(x=x,newz=newExperiment(z=thez)))
+  pTwoSided <- 2*min(c(mean(randDistH0>=obsTestStat),
+		      mean(randDistH0<=obsTestStat)))
+  return(pTwoSided)
+}
+plot(density(randDistH0))
+
+res1<-foreach(h=seq(-0.2,0.2,0.01),.combine='c') %dopar% {message("."); myFisherTest2(x=h,thez=t1dat$frm2) }
+rbind(seq(-0.2,0.2,0.01),res1)
+
+myFisherTest2Uniroot<-function(x,thez){
+  ## return a p-value
+  randDistH0<-replicate(1000,myTestStat(x=x,newz=newExperiment(z=thez)))
+  pTwoSided <- 2*min(c(mean(randDistH0>=obsTestStat),
+		      mean(randDistH0<=obsTestStat)))
+  return(.05-pTwoSided)
+}
+
+upperlimF<-uniroot(myFisherTest2Uniroot,thez=t1dat$frm2,interval=c(-0.1,1),extendInt="no")
+upperlimF$root
+lowerlimF<-uniroot(myFisherTest2Uniroot,thez=t1dat$frm2,interval=c(-0.1,-1),extendInt="no")
+lowerlimF$root
+c(lowerlimF$root,upperlimF$root)
+```
+
+# p-value
+```{r cicoverage, cache=TRUE}
+newExperiment<-function(z){
+  newz<-sample(z) ## make truth H0: \tau=0
+  return(newz)
+}
+
+myTestStat<-function(x,newz,y=t1dat$pid){
+  # x is a hypothesized constant treatment effect
+  newy <- y - ( newz*x ) ## what we would observe under the hypothesis (constant effects)
+  ## Something like this:
+  ## mean(sapply(split(news.df,news.df$sF),function(dat){ dat$r[dat$z==1]-dat$r[dat$z==0] }))
+  coef(lm(newy~newz))[["newz"]]
+}
+randDistH0<-replicate(1000,myTestStat(x=0,newz=newExperiment(z=t1dat$frm2)))
+obsTestStat<-myTestStat(x=0,newz=t1dat$frm2)
+
+mean(randDistH0>=obsTestStat)
+mean(randDistH0<=obsTestStat)
+
+2*min(c(mean(randDistH0>=obsTestStat),
+	mean(randDistH0<=obsTestStat)))
+
+
+## for now, H0: y1=y0, or x=0
+```
+
+
+# Bayesian analysis
+
+```{r baysian}
+
+agetable<-table(t1dat2$frm2, t1dat2$ageG)
+dimnames(agetable)[[2]] <- c("<=20","30-40","40-50","50-60",">=60")
+sapply(agetable, sum)
+colSums(agetable)
+com.agetable<-print(rbind(agetable, colSums(agetable), agetable[2,]/colSums(agetable)), digits=2)
+com.agetable
+
+control<-subset(t1dat2, formulario==1)
+outcometable<-table(control$pid, control$ageG)
+dimnames(outcometable)[[2]] <- c("<=20","30-40","40-50","50-60",">=60")
+outcometable2 <- rbind(outcometable, outcometable[2,]/colSums(outcometable))
+outcometable2
+```
+
+
+## Basic Bayesian Analysis
+
+```{r}
+
+# Omitting NAs 
+t1dat1<-t1dat[complete.cases(t1dat$frm2),]
+t1dat1<-t1dat[complete.cases(t1dat$pid),]
+
+N <- nrow(t1dat1)
+X <- model.matrix(~1+frm2,data=t1dat1)
+
+tr_dat<-list(N=N,
+         K=ncol(X),
+         x=X,
+         y=t1dat1$pid)
+
+require(rstan)
+seed<-12345
+fit_normal<-stan(file='linear3.stan', data=tr_dat, chains=4, chain_id=1, seed=seed, iter=1000)
+
+print(fit_normal, "beta", digit=5)
+
+betas_normal<-extract(fit_normal,"beta",permuted=TRUE)$beta
+dimnames(betas_normal)[[2]]<-c("Intercept","treatment1")
+betanormalPosteriorMeans<-apply(betas_normal,2,mean)
+
+betanormalPosteriorMeans
+main=paste(dimnames(betas_normal)[[2]][i])
+
+getmode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+modenormal<-c(getmode(betas_normal[,1]),getmode(betas_normal[,2]))
+modenormal
+
+par(mar=c(2,2,2,2))
+par(mfrow=c(1,2))
+for(i in 1:2){
+     plot(density(betas_normal[,i]),
+         main=paste(dimnames(betas_normal)[[2]][i])
+	 	 )
+    rug(betanormalPosteriorMeans[i],ticksize=.1,lwd=2)
+    rug(modenormal[i],ticksize = .2,lwd=2,col="red")
+    abline(v=0,col="gray",lwd=.5)
+}
+
+```
+
+
+## MLM Bayesian Analysis
+
+```{r }
+# Creating age subgroups 
+#getting rid of NAs 
+t1dat2<-t1dat1[complete.cases(t1dat1$age),]
+
+t1dat2$ageG[t1dat2$age<30]<-1
+t1dat2$ageG[t1dat2$age>=30 & t1dat2$age<40]<-2
+t1dat2$ageG[t1dat2$age>=40 & t1dat2$age<50]<-3
+t1dat2$ageG[t1dat2$age>=50 & t1dat2$age<60]<-4
+t1dat2$ageG[t1dat2$age>=60]<-5
+
+
+t1dat2$ageGF[t1dat2$ageG==1] <- "twenties"
+t1dat2$ageGF[t1dat2$ageG==2] <- "thirties"
+t1dat2$ageGF[t1dat2$ageG==3] <- "forties"
+t1dat2$ageGF[t1dat2$ageG==4] <- "fifties"
+t1dat2$ageGF[t1dat2$ageG==5] <- "older"
+
+t1dat2$frm2MdG <- t1dat2$frm2-mean(t1dat2$frm2) ## subtracting across-country mean to each observation
+
+t1dat2$frm2J<-ave(t1dat2$frm2,t1dat2$ageGF) 
+
+t1dat2$frm2Md<-t1dat2$frm2-t1dat2$frm2J 
+
+frm2J<-tapply(t1dat2$frm2,t1dat2$ageGF,mean)
+t1dat2$ageGF<-factor(t1dat2$ageGF)
+
+N<-nrow(t1dat2) 
+J<-length(levels(t1dat2$ageGF))
+X<-model.matrix(~1+frm2MdG,data=t1dat2) # matrix for MdG (global distance)
+
+umat<-cbind(1,frm2J) 
+
+# New dataset
+trmlm_dat<-list(N=N,
+	     K=ncol(X),
+	     J=J,
+	     L=ncol(umat),
+	     jj=t1dat2$ageG,
+	     x=X, 
+	     u=umat,
+	     y=t1dat2$pid)
+
+library(rstan)
+seed<-12345
+mlmfit1<-stan(file='mlm.stan', data=trmlm_dat, chains=4, chain_id=1, seed=seed, iter=1000)
+
+print(mlmfit1,"gamma",probs=c(.025,.975),digits=4)
+
+gammas<-extract(mlmfit1,"gamma",permuted=TRUE)$gamma  
+
+dimnames(gammas)
+dimnames(gammas)[[2]]<-c("Intercept","frm2J")
+dimnames(gammas)[[3]]<-c("Intercept","frm2MdG")
+
+gammas[1:10,"frm2J","frm2MdG"]
+gammas[c(2,3)]
+
+gammaPosteriorMeans<-apply(gammas,c(2,3),mean)
+gammaPosteriorMeans 
+
+## estimating beta
+mlmbetas<-extract(mlmfit1,"beta",permuted=TRUE)$beta
+groups<-row.names(umat)
+groups
+dimnames(mlmbetas)[[2]]<-groups
+
+mlmbetasmean<-apply(mlmbetas,c(2,3),summary)
+mlmbetasmean[,,2][4,]
+
+
+
+par(mfrow=c(2,2))
+par(mar=c(1,1,1,1))
+for(i in 1:2){
+  for(j in 1:2){
+    plot(density(gammas[,i,j]),
+	 main=paste(dimnames(gammas)[[2]][i],
+		    dimnames(gammas)[[3]][j],sep="*")
+	 )
+    rug(gammaPosteriorMeans[i,j],ticksize=.1,lwd=2)
+    abline(v=0,col="gray",lwd=.5)
+  }
+}
+dimnames(mlmbetas)[[3]]
+mlmbetasmean[,,2]
+mlmbetasmean[4,,2]
+dimnames(mlmbetas)[[2]]
+c("Intercept","beta")[2]
+
+par(mfrow=c(5,2))
+par(mar=c(2,2,2,2))
+for(i in 1:5){
+  for(j in 1:2){
+    plot(density(mlmbetas[,i,j]),
+	 main=paste(dimnames(mlmbetas)[[2]][i])	 )
+    rug(mlmbetasmean[4,i,j],ticksize=.1,lwd=2)
+    abline(v=0,col="gray",lwd=.5)
+  }
+}
+
+## another mlm: main explanatory variable is not the global distance but actual binary variable
+
+N<-nrow(t1dat2) 
+J<-length(levels(t1dat2$ageGF)) 
+X2<-model.matrix(~1+frm2,data=t1dat2) 
+
+umat<-cbind(1,frm2J) 
+
+
+# New dataset
+trmlm_dat2<-list(N=N,
+	     K=ncol(X2),
+	     J=J,
+	     L=ncol(umat),
+	     jj=t1dat2$ageG,
+	     x=X2, 
+	     u=umat,
+	     y=t1dat2$pid)
+
+library(rstan)
+seed<-12345
+mlmfit2<-stan(file='mlm.stan', data=trmlm_dat2, chains=4, chain_id=1, seed=seed, iter=1000)
+
+print(mlmfit2,"gamma",probs=c(.025,.975),digits=4)
+
+gammas2<-extract(mlmfit1,"gamma",permuted=TRUE)$gamma  
+
+dimnames(gammas2)[[2]]<-c("Intercept","frm2J")
+dimnames(gammas2)[[3]]<-c("Intercept","frm2")
+
+gammas2[1:10,"frm2J","frm2"]
+gammas2[c(2,3)]
+
+gammaPosteriorMeans2<-apply(gammas2,c(2,3),mean)
+gammaPosteriorMeans2
+
+## estimating  beta
+mlmbetas2<-extract(mlmfit2,"beta",permuted=TRUE)$beta
+print(mlmfit2,"beta",probs=c(.025,.975),digits=4)
+
+groups<-row.names(umat)
+dimnames(mlmbetas2)[[2]]<-groups
+mlmbetas
+
+betaPosteriorMeans2<-apply(mlmbetas2,c(2,3),summary)
+betaPosteriorMeans2[4,,2]
+
+par(mfrow=c(5,2))
+par(mar=c(2,2,2,2))
+for(i in 1:5){
+  for(j in 1:2){
+    plot(density(mlmbetas2[,i,j]),
+	 main=paste(dimnames(mlmbetas2)[[2]][i])	 )
+    rug(betaPosteriorMeans2[4,i,j],ticksize=.1,lwd=2)
+    abline(v=0,col="gray",lwd=.5)
+  }
+}
+
+par(mfrow=c(2,2))
+for(i in 1:2){
+  for(j in 1:2){
+    plot(density(gammas2[,i,j]),
+	 main=paste(dimnames(gammas2)[[2]][i],
+		    dimnames(gammas2)[[3]][j],sep="*")
+	 )
+    rug(gammaPosteriorMeans2[i,j],ticksize=.1,lwd=2)
+    abline(v=0,col="gray",lwd=.5)
+  }
+}
+
+
+
+```
+
+```{r}
+## Additional approach with pid as a prior
+N<-nrow(t1dat2) 
+J<-length(levels(t1dat2$ageGF)) 
+X2<-model.matrix(~1+frm2,data=t1dat2) 
+
+pidJ<-tapply(t1dat2$pid,t1dat2$ageGF,mean)
+umat2<-cbind(1,pidJ) 
+
+
+# New dataset
+trmlm_dat3<-list(N=N,
+	     K=ncol(X2),
+	     J=J,
+	     L=ncol(umat2),
+	     jj=t1dat2$ageG,
+	     x=X2, 
+	     u=umat,
+	     y=t1dat2$pid)
+
+library(rstan)
+seed<-12345
+mlmfit3<-stan(file='mlm.stan', data=trmlm_dat3, chains=4, chain_id=1, seed=seed, iter=1000)
+
+
+## estimating  beta
+print(mlmfit3,"beta",probs=c(.025,.975),digits=4)
+mlmbetas3<-extract(mlmfit3,"beta",permuted=TRUE)$beta
+
+groups<-row.names(umat2)
+dimnames(mlmbetas3)[[2]]<-groups
+mlmbetas
+
+betaPosteriorMeans3<-apply(mlmbetas3,c(2,3),summary)
+betaPosteriorMeans3
+betaPosteriorMeans3[4,,2]
+```
+
+# Bayesian Analysis with Logistic Regression
+```{r}
+# logit
+trmlm_dat2<-list(N=N,
+	     K=ncol(X2),
+	     J=J,
+	     L=ncol(umat),
+	     jj=t1dat2$ageG,
+	     x=X2, 
+	     u=umat,
+	     y=t1dat2$pid)
+
+
+require(rstan)
+seed<-12345
+fit_logitmlm<-stan(file='logitmlm.stan', data=trmlm_dat2, chains=4, chain_id=1, seed=seed, iter=1000)
+
+print(fit_logitmlm, "beta",prob=c(.025,.975), digit=5)
+
+betas_logitmlm<-extract(fit_logitmlm,"beta",permuted=TRUE)$beta
+dimnames(betas_logitmlm)[[2]]<-groups
+
+betalogitmlmPosteriorMeans<-apply(betas_logitmlm,c(2,3),mean)
+
+dimnames(betalogitmlmPosteriorMeans)[[2]]<-c("Intercept","Treatment1")
+betas_logitmlm
+betalogitmlmPosteriorMeans
+
+par(mfrow=c(5,2))
+par(mar=c(2,2,2,2))
+
+for(i in 1:5){
+  for(j in 1:2){
+    plot(density(betas_logitmlm[,i,j]),
+	 main=paste(dimnames(betas_logitmlm)[[2]][i])	 )
+    rug(betalogitmlmPosteriorMeans[i,j],ticksize=.1,lwd=2)
+    abline(v=0,col="gray",lwd=.5)
+  }
+}
+
+save.image("replication.rda")
+```
+
+
+
+# Reference
