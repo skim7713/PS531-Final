@@ -78,6 +78,7 @@ While CATEs present evidences for the main theoretical argument, they are limite
 This paper proceeds as follows. We first analyze the operating characteristics of the procedures, such as bias, Type I error and Power test, and confidence intervals. Bayesian statistical approaches follows with a more detailed description of the motivation behind the analysis taken in this paper. This paper concludes with some final remarks. 
 
 
+
 # Analysis of the operating characteristics of the procedures
 
 This section presents analysis of the operating characteristic of statistical inference of the original paper. Lupu (2013) basically utilizes a difference-in-means method, subtracting differences in proportions of partisan identification before and after treatments. The empirical analysis also has three categories of treatment, two main treatments and one combined treatment. We focus on the first main treatment of policy platform and check the bias, Type I error, power of the tests, and confidence intervals based on an ordinary least squares method of main variables. 
